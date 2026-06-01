@@ -1,0 +1,104 @@
+# Dynamic Assembly System Parameters
+
+ekf_camera_aruco_launch:
+  ros__parameters:
+    use_camera: true
+    use_aruco: true
+    use_apf: true
+    video_device: "/dev/video0"
+    camera_auto_exposure_control: "auto_exposure=1"
+    camera_start_delay: 0.5
+    aruco_start_delay: 3.0
+    ekf_start_delay: 1.5
+    apf_start_delay: 2.0
+    camera_pixel_format: "mjpeg2rgb"
+    camera_info_url: "file:///home/bran_24/camera_config/my_usb_cam.yaml"
+    camera_name: "default_cam"
+    camera_tf_parent_frame: "world"
+    camera_tf_child_frame: "default_cam"
+    camera_tf_x: 0.5
+    camera_tf_y: 0.0
+    camera_tf_z: 0.3
+    camera_tf_roll: 0.0
+    camera_tf_pitch: 0.0
+    camera_tf_yaw: 0.0
+    marker_size: 0.10
+    aruco_dictionary_id: "DICT_6X6_50"
+    image_topic: "/image_raw"
+    camera_info_topic: "/camera_info"
+
+ekf_filter_node:
+  ros__parameters:
+    use_sim_time: true
+    prediction_steps: 50
+    prediction_dt: 0.02
+    aruco_markers: "/aruco_markers"
+    state_topic: "/estimated_object_state"
+    trajectory_topic: "/predicted_target_trajectory"
+    target_marker_id: 0
+    target_plane_z: 0.25
+    tracking_frame: "world"
+    use_tf_transform: true
+
+apf_planner_node:
+  ros__parameters:
+    use_sim_time: true
+    period_ms: 10.0
+    target_prediction_time: 0.1
+    target_plane_z: 0.25
+    attractive_gain: 1.0
+    repulsive_gain: 0.15
+    obstacle_influence_distance: 0.25
+    obstacle_min_distance: 0.03
+    lookahead_distance: 0.08
+    max_force_norm: 1.0
+    min_force_norm: 0.0001
+    filter_alpha: 0.35
+    output_path_points: 10
+    output_path_dt: 0.1
+    publish_legacy_path: true
+    frame_id: "world"
+    tip_link_name: "link_6"
+    joint_state_topic: "/joint_states"
+    target_path_topic: "/predicted_target_trajectory"
+    target_state_topic: "/estimated_object_state"
+    lookahead_topic: "/apf/lookahead_point"
+    legacy_path_topic: "/strategic_goal_path"
+    marker_topic: "/strategic_goal_path_marker"
+    joint_names: ["joint_1", "joint_2", "joint_3", "joint_4", "joint_5", "joint_6"]
+    workspace_min: [-1.0, -1.0, 0.02]
+    workspace_max: [1.0, 1.0, 1.0]
+
+mpc_planner_node:
+  ros__parameters:
+    use_sim_time: true
+    horizon: 10
+    dt: 0.05
+    timeout_ms: 50.0
+    tracking_weight: 1.0
+    control_weight: 0.01
+    max_tracking_error: 0.1
+    max_data_age: 0.75
+    command_topic: "/arm_controller/joint_trajectory"
+    nominal_topic: "/mpc_nominal_cmd"
+    goal_path_topic: "/strategic_goal_path"
+    joint_state_topic: "/joint_states"
+    approach_height: 0.25
+    cartesian_z_weight: 1.0
+    linearization_damping: 0.05
+    qp_regularization: 0.000001
+    max_joint_velocity: 1.0
+    terminal_weight: 2.0
+    control_delta_weight: 0.05
+    track_planar_yaw: true
+    yaw_tracking_weight: 1.0
+    yaw_terminal_weight: 1.0
+    osqp_max_iterations: 5000
+    osqp_eps_abs: 0.005
+    osqp_eps_rel: 0.005
+
+hardware_interface_node:
+  ros__parameters:
+    use_sim_time: true
+    watchdog_timeout: 0.04
+    feedback_rate: 100.0

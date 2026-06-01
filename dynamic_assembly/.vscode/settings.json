@@ -1,0 +1,20 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/bran_24/ws_moveit2/install/crane_x7_examples_py/lib/python3.12/site-packages",
+        "/home/bran_24/ws_moveit2/install/crane_x7_description/lib/python3.12/site-packages",
+        "/home/bran_24/ws_moveit2/install/moveit_py/lib/python3.12/site-packages",
+        "/home/bran_24/ws_moveit2/install/moveit_msgs/lib/python3.12/site-packages",
+        "/home/bran_24/ws_moveit2/install/moveit_configs_utils/lib/python3.12/site-packages",
+        "/home/bran_24/ws_moveit2/install/fairino_msgs/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/bran_24/ws_moveit2/install/crane_x7_examples_py/lib/python3.12/site-packages",
+        "/home/bran_24/ws_moveit2/install/crane_x7_description/lib/python3.12/site-packages",
+        "/home/bran_24/ws_moveit2/install/moveit_py/lib/python3.12/site-packages",
+        "/home/bran_24/ws_moveit2/install/moveit_msgs/lib/python3.12/site-packages",
+        "/home/bran_24/ws_moveit2/install/moveit_configs_utils/lib/python3.12/site-packages",
+        "/home/bran_24/ws_moveit2/install/fairino_msgs/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages"
+    ]
+}

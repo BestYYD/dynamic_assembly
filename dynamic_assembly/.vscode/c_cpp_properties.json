@@ -1,0 +1,58 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/bran_24/ws_moveit2/install/rviz_visual_testing_framework/include/**",
+        "/home/bran_24/ws_moveit2/install/ar4_hardware_interface/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_setup_assistant/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_setup_srdf_plugins/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_setup_core_plugins/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_setup_controllers/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_setup_app_plugins/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_setup_framework/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_servo/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_ros_trajectory_cache/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_ros_visualization/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_hybrid_planning/include/**",
+        "/home/bran_24/ws_moveit2/install/crane_x7_control/include/**",
+        "/home/bran_24/ws_moveit2/install/rviz_default_plugins/include/**",
+        "/home/bran_24/ws_moveit2/install/rviz_common/include/**",
+        "/home/bran_24/ws_moveit2/install/rviz_rendering/include/**",
+        "/home/bran_24/ws_moveit2/install/pilz_industrial_motion_planner_testutils/include/**",
+        "/home/bran_24/ws_moveit2/install/pilz_industrial_motion_planner/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_ros_control_interface/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_simple_controller_manager/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_py/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_ros_planning_interface/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_ros_benchmarks/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_ros_warehouse/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_ros_robot_interaction/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_ros_perception/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_ros_move_group/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_planners_ompl/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_kinematics/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_ros_planning/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_ros_occupancy_map_monitor/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_resources_prbt_ikfast_manipulator_plugin/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_planners_stomp/include/**",
+        "/home/bran_24/ws_moveit2/install/chomp_motion_planner/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_core/include/**",
+        "/home/bran_24/ws_moveit2/install/moveit_msgs/include/**",
+        "/home/bran_24/ws_moveit2/install/fairino_msgs/include/**",
+        "/opt/ros/jazzy/include/**",
+        "/home/bran_24/ws_moveit2/src/dynamic_assembly/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ros2",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++17"
+    }
+  ],
+  "version": 4
+}
