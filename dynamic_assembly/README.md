@@ -166,52 +166,57 @@ dynamic_assembly/
 
 | 项目 | 已验证版本或来源 |
 | --- | --- |
-| 操作系统 / 是否使用 WSL | **待作者补充** |
-| ROS2 发行版 | **待作者补充** |
-| Gazebo / MoveIt 版本 | **待作者补充** |
-| OSQP 版本及安装方式 | **待作者补充：需与当前 C API 及构建配置匹配** |
-| AR4 模型、MoveIt 配置、仿真包 | **待作者补充仓库链接、分支或提交版本，以及本地修改** |
-| ArUco / 相机相关包 | **待作者补充来源及版本** |
+| 操作系统 / 是否使用 WSL | 本项目开发与测试均在WSL2环境中完成 |
+| ROS2 发行版 | Jazzy |
+| Gazebo / MoveIt 版本 | 同ROS2 |
+| AR4 模型、MoveIt 配置、仿真包 | 正在完善中，后续将上传 |
+真实相机模式使用以下 ROS2 软件包：
+
+| 软件包 | 作用 |
+|---|---|
+| `usb_cam` | 读取 USB 摄像头并发布图像和相机信息 |
+| `ros2_aruco` | 根据相机图像检测 ArUco 标记 |
+| `ros2_aruco_interfaces` | 提供 `ArucoMarkers` 消息类型 |
+| `tf2_ros` | 将相机坐标系下的目标位姿转换到 `world` 等跟踪坐标系 |
+| `tf2_geometry_msgs` | 支持几何消息的 TF2 坐标变换 |
+| OpenCV ArUco | ArUco 检测底层依赖，通常由 `ros2_aruco` 间接使用 |
+
+本项目默认使用：
+
+- ArUco 字典：`DICT_6X6_50`
+- 目标标记 ID：`0`
+- 标记尺寸：`0.10 m`
+- 图像话题：`/image_raw`
+- 相机信息话题：`/camera_info`
+- 跟踪坐标系：`world`
+
+启动真实相机前，需要准备相机标定文件，并在启动参数中设置：
+
+```yaml
+camera_info_url: "file:///path/to/your/camera_calibration.yaml"
 
 相机标定路径和相机坐标变换应按使用环境配置。当前配置中含本地标定文件路径，复现前需要替换。
 
-## 操作说明（待作者填写）
-
-> 本节预留实际验证过的操作流程。请补充命令、终端分工、启动顺序及成功现象；以下占位内容不代表一键复现步骤。
+## 操作说明
 
 ### 1. 环境安装与工作空间准备
+本项目在 Linux / WSL 环境下开发，使用 ROS2、MoveIt、Gazebo、Eigen 和 OSQP。建议使用 Ubuntu 24.04 + ROS2 Jazzy；如果使用其他版本，请相应替换安装包名称和外部依赖版本。
 
-**待填写：** 依赖安装、外部仓库获取、目录布局、环境加载与编译步骤。
-
-```bash
-# TODO：填写已验证的环境准备与编译命令
-```
 
 ### 2. 无相机仿真闭环
-
-**待填写：** Gazebo 与控制器、模拟目标、状态估计、APF、MPC 的启动顺序，使用的参数，以及机械臂预期运动。
 
 `fake_aruco_tracking.launch.py` 只启动模拟目标、状态估计和可选 APF，不启动 Gazebo 与 MPC；组合启动时需避免重复启动状态估计或 APF 节点。
 
 ```bash
-# TODO：终端 1 —— 仿真与控制器
-# TODO：终端 2 —— 目标输入及规划控制链路
-# TODO：检查 /clock、TF、/joint_states 和控制指令
-```
+# TODO：终端 1：使用 ros2 launch dynamic_assembly bringup.launch.py 启动 moveit2
+# TODO：终端 2：不使用摄像头启动EKF相关节点 ros2 launch dynamic_assembly fake_aruco_tracking.launch.py 
+# TODO：终端 3：单独启动MPC节点 ：ros2 run dynamic_assembly mpc_planner_node --ros-args   --params-file /home/bran_24/ws_moveit2/src/dynamic_assembly/config/params.yaml
+# TODO：终端 4：可使用 ros2 topic list 查看 topic 运行情况
 
-### 3. 真实相机与 ArUco 输入
 
-**待填写：** 相机设备、标定文件、标记尺寸与 ID、坐标变换、启动命令，以及如何替换模拟目标。
+### 3. 停止流程与常见问题
 
-`bringup.launch.py` 默认启用相机与 ArUco；`ekf_camera_aruco.launch.py` 不包含完整机械臂闭环。同一目标话题上应选择真实或模拟输入，避免混用。
-
-```bash
-# TODO：填写相机与 ArUco 启动及检查命令
-```
-
-### 6. 停止流程与常见问题
-
-**待填写：** 控制指令停止、节点退出顺序，以及时钟、TF、模型加载、控制器和求解器异常的排查方式。
+暂无
 
 
 ## 后续工作
