@@ -206,12 +206,10 @@ camera_info_url: "file:///path/to/your/camera_calibration.yaml"
 
 `fake_aruco_tracking.launch.py` 只启动模拟目标、状态估计和可选 APF，不启动 Gazebo 与 MPC；组合启动时需避免重复启动状态估计或 APF 节点。
 
-```bash
 # TODO：终端 1：使用 ros2 launch dynamic_assembly bringup.launch.py 启动 moveit2
 # TODO：终端 2：不使用摄像头启动EKF相关节点 ros2 launch dynamic_assembly fake_aruco_tracking.launch.py 
 # TODO：终端 3：单独启动MPC节点 ：ros2 run dynamic_assembly mpc_planner_node --ros-args   --params-file /home/bran_24/ws_moveit2/src/dynamic_assembly/config/params.yaml
 # TODO：终端 4：可使用 ros2 topic list 查看 topic 运行情况
-
 
 ### 3. 停止流程与常见问题
 
