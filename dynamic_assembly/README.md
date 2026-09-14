@@ -192,7 +192,6 @@ dynamic_assembly/
 
 启动真实相机前，需要准备相机标定文件，并在启动参数中设置：
 
-```yaml
 camera_info_url: "file:///path/to/your/camera_calibration.yaml"
 
 相机标定路径和相机坐标变换应按使用环境配置。当前配置中含本地标定文件路径，复现前需要替换。
