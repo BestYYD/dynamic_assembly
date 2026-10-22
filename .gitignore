@@ -1,3 +1,36 @@
-**/.vscode/*.vc.db
-**/.vscode/*.vc.db-shm
-**/.vscode/*.vc.db-wal
+# ROS / colcon generated output (at any package depth)
+**/build/
+**/install/
+**/log/
+
+# Editor, Python and local environment files
+**/.vscode/
+**/.idea/
+**/__pycache__/
+*.py[cod]
+**/.pytest_cache/
+**/.venv*/
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+
+# Experiment output and learned weights; publish curated results separately
+*.db3
+*.db3-shm
+*.db3-wal
+*.mcap
+**/runs/
+**/checkpoints/
+**/wandb/
+*.pt
+*.pth
+*.onnx
+**/apf_*_bag/
+**/apf_*_csv/
+
+# Workspace-local synchronization copies and assistant metadata
+.github-sync/
+.agents/
+.codex/

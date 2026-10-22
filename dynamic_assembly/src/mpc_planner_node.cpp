@@ -122,6 +122,7 @@ MpcPlannerNode::MpcPlannerNode(const rclcpp::NodeOptions& options)
   declare_parameter("osqp_max_iterations", osqp_max_iterations_);
   declare_parameter("osqp_eps_abs", osqp_eps_abs_);
   declare_parameter("osqp_eps_rel", osqp_eps_rel_);
+  declare_parameter("stats_csv_path", stats_csv_path_);
 
   config_.horizon = get_parameter("horizon").as_int();
   config_.dt = get_parameter("dt").as_double();
@@ -147,6 +148,7 @@ MpcPlannerNode::MpcPlannerNode(const rclcpp::NodeOptions& options)
   osqp_max_iterations_ = get_parameter("osqp_max_iterations").as_int();
   osqp_eps_abs_ = get_parameter("osqp_eps_abs").as_double();
   osqp_eps_rel_ = get_parameter("osqp_eps_rel").as_double();
+  stats_csv_path_ = get_parameter("stats_csv_path").as_string();
 
   current_joint_positions_.setZero();
   current_joint_velocities_.setZero();
@@ -293,6 +295,7 @@ void MpcPlannerNode::controlTimerCallback() {
 
   if (!success || elapsed > config_.timeout_ms) {
     RCLCPP_WARN(get_logger(), "MPC solve failed or timeout (%.1fms), fallback", elapsed);
+    writeSolveStats(elapsed, false);
     executeFallback();
     return;
   }
@@ -305,6 +308,7 @@ void MpcPlannerNode::controlTimerCallback() {
   traj_pub_->publish(trajectory);
   last_trajectory_ = trajectory;
   has_last_trajectory_ = true;
+  writeSolveStats(elapsed, true);
 }
 
 bool MpcPlannerNode::solveMpc(trajectory_msgs::msg::JointTrajectory& output) {
@@ -400,8 +404,8 @@ bool MpcPlannerNode::buildReferencePlanarPoseTrajectory(
     const auto& path_pose = goal_path_->poses[pose_index].pose;
 
     PlanarPoseReference reference;
-    // 平面跟踪时 APF 只提供 XY 参考，末端高度由 MPC 的 approach_height 固定。
-    reference.position = Eigen::Vector3d(path_pose.position.x, path_pose.position.y, approach_height_);
+    // 参考位姿直接跟随 APF 路径的 XYZ；目标高度由 EKF/APF 的 target_plane_z 统一决定。
+    reference.position = Eigen::Vector3d(path_pose.position.x, path_pose.position.y, path_pose.position.z);
     reference.yaw = reference_yaw;
     references.push_back(reference);
   }
@@ -568,6 +572,9 @@ bool MpcPlannerNode::solveCartesianLtvMpc(
     return false;
   }
 
+  last_solve_stats_ = SolveStats{};
+  last_solve_stats_.horizon = horizon;
+  last_solve_stats_.status = "not_run";
   const int num_variables = horizon * kDof;
   const int num_constraints = 2 * num_variables;
   const double dt = config_.dt;
@@ -722,14 +729,26 @@ bool MpcPlannerNode::solveCartesianLtvMpc(
   settings.time_limit = static_cast<c_float>(std::max(0.001, config_.timeout_ms / 1000.0));
 
   OSQPWorkspace* work = nullptr;
+  const auto osqp_setup_start = std::chrono::steady_clock::now();
   const c_int setup_status = osqp_setup(&work, &data, &settings);
+  last_solve_stats_.osqp_setup_ms = std::chrono::duration<double, std::milli>(
+      std::chrono::steady_clock::now() - osqp_setup_start).count();
   bool success = false;
 
   //求解器开始求解
   if (setup_status == 0 && work) {
+    const auto osqp_solve_start = std::chrono::steady_clock::now();
     const c_int solve_status = osqp_solve(work);
+    last_solve_stats_.osqp_solve_ms = std::chrono::duration<double, std::milli>(
+        std::chrono::steady_clock::now() - osqp_solve_start).count();
     const c_int status = work->info ? work->info->status_val : 0;
     success = (solve_status == 0) && (status == OSQP_SOLVED || status == OSQP_SOLVED_INACCURATE);
+    if (work->info) {
+      last_solve_stats_.iterations = static_cast<int>(work->info->iter);
+      last_solve_stats_.status = work->info->status;
+      last_solve_stats_.osqp_run_time_ms = static_cast<double>(work->info->run_time) * 1000.0;
+    }
+    last_solve_stats_.success = success;
 
     if (success && work->solution && work->solution->x) {
       optimal_velocities.clear();
@@ -749,6 +768,9 @@ bool MpcPlannerNode::solveCartesianLtvMpc(
     }
   }
 
+  if (setup_status != 0 || !work) {
+    last_solve_stats_.status = "setup_failed";
+  }
   if (work) {
     osqp_cleanup(work);
   }
@@ -756,6 +778,38 @@ bool MpcPlannerNode::solveCartesianLtvMpc(
   c_free(a_csc);
 
   return success && optimal_velocities.size() == static_cast<size_t>(horizon);
+}
+
+void MpcPlannerNode::writeSolveStats(double total_mpc_ms, bool command_sent) {
+  if (stats_csv_path_.empty()) {
+    return;
+  }
+
+  if (!stats_csv_.is_open()) {
+    stats_csv_.open(stats_csv_path_, std::ios::out | std::ios::app);
+    if (!stats_csv_.is_open()) {
+      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000,
+                           "Failed to open MPC stats CSV: %s", stats_csv_path_.c_str());
+      return;
+    }
+  }
+
+  if (!stats_header_written_ && stats_csv_.tellp() == 0) {
+    stats_csv_ << "stamp,horizon,command_sent,success,status,iterations,total_mpc_ms,osqp_setup_ms,osqp_solve_ms,osqp_run_time_ms\n";
+  }
+  stats_header_written_ = true;
+
+  stats_csv_ << now_sec() << ","
+             << last_solve_stats_.horizon << ","
+             << (command_sent ? 1 : 0) << ","
+             << (last_solve_stats_.success ? 1 : 0) << ","
+             << last_solve_stats_.status << ","
+             << last_solve_stats_.iterations << ","
+             << total_mpc_ms << ","
+             << last_solve_stats_.osqp_setup_ms << ","
+             << last_solve_stats_.osqp_solve_ms << ","
+             << last_solve_stats_.osqp_run_time_ms << "\n";
+  stats_csv_.flush();
 }
 
 void MpcPlannerNode::fillJointTrajectoryPoint(

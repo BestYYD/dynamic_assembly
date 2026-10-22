@@ -83,6 +83,7 @@ ApfPlannerNode::ApfPlannerNode(const rclcpp::NodeOptions& options)
   declare_parameter("lookahead_topic", lookahead_topic_);
   declare_parameter("legacy_path_topic", legacy_path_topic_);
   declare_parameter("marker_topic", marker_topic_);
+  declare_parameter("obstacle_marker_topic", obstacle_marker_topic_);
   
   declare_parameter<std::vector<std::string>>("joint_names", joint_names_);
   declare_parameter<std::vector<double>>("workspace_min", {-1.0, -1.0, 0.02});
@@ -112,6 +113,7 @@ ApfPlannerNode::ApfPlannerNode(const rclcpp::NodeOptions& options)
   lookahead_topic_ = get_parameter("lookahead_topic").as_string();
   legacy_path_topic_ = get_parameter("legacy_path_topic").as_string();
   marker_topic_ = get_parameter("marker_topic").as_string();
+  obstacle_marker_topic_ = get_parameter("obstacle_marker_topic").as_string();
   joint_names_ = get_parameter("joint_names").as_string_array();
   workspace_min_ = vectorFromParameter(get_parameter("workspace_min").as_double_array(), workspace_min_);
   workspace_max_ = vectorFromParameter(get_parameter("workspace_max").as_double_array(), workspace_max_);
@@ -137,6 +139,8 @@ ApfPlannerNode::ApfPlannerNode(const rclcpp::NodeOptions& options)
   lookahead_pub_ = create_publisher<geometry_msgs::msg::PointStamped>(lookahead_topic_, 10);
   legacy_path_pub_ = create_publisher<nav_msgs::msg::Path>(legacy_path_topic_, 10);
   marker_pub_ = create_publisher<visualization_msgs::msg::Marker>(marker_topic_, 10);
+  obstacle_marker_pub_ = create_publisher<visualization_msgs::msg::MarkerArray>(
+      obstacle_marker_topic_, rclcpp::QoS(1).transient_local());
 
   timer_ = create_wall_timer(
       std::chrono::milliseconds(static_cast<int>(period_ms_)),
@@ -225,6 +229,7 @@ void ApfPlannerNode::jointStateCallback(const sensor_msgs::msg::JointState::Shar
 }
 
 void ApfPlannerNode::planningTimerCallback() {
+  publishObstacleMarkers(now());
   if (!apf_initialized_) {
     initialize_APF();
   }
@@ -326,16 +331,16 @@ bool ApfPlannerNode::buildLookaheadPath(std::vector<Eigen::Vector3d>& lookahead_
     const Eigen::Vector3d attractive = computeAttractiveForce(nominal_point, target_point);
     const Eigen::Vector3d repulsive = computeRepulsiveForce(nominal_point);
 
-    // 每个路径点都按一次 APF 合力向前滚动，形成给 MPC 使用的短时域参考。
-    Eigen::Vector3d force = clampVectorNorm(attractive + repulsive, max_force_norm_);
+    // 用合力本身作为位移方向和大小，并把单步位移限制在 lookahead_distance_ 内。
+    // 这样靠近障碍物影响边界时不会因为单位化方向反复跳变成锯齿路径。
+    Eigen::Vector3d step_vector = clampVectorNorm(attractive + repulsive, lookahead_distance_);
 
-    if (force.norm() < min_force_norm_) {
-      force = target_point - nominal_point;
+    if (step_vector.norm() < min_force_norm_) {
+      step_vector = clampVectorNorm(target_point - nominal_point, lookahead_distance_);
     }
 
-    if (force.norm() >= min_force_norm_) {
-      nominal_point =
-          clampWorkspace(nominal_point + lookahead_distance_ * force.normalized());
+    if (step_vector.norm() >= min_force_norm_) {
+      nominal_point = clampWorkspace(nominal_point + step_vector);
     }
 
     lookahead_path.push_back(nominal_point);
@@ -355,8 +360,9 @@ Eigen::Vector3d ApfPlannerNode::computeRepulsiveForce(const Eigen::Vector3d& fro
 
   for (const auto& obstacle : obstacles_) {
 
-    // 障碍物用球体近似；距离超过影响半径后不再产生斥力。
-    const Eigen::Vector3d diff = from_point - obstacle.center;
+    // 目标只做平面跟踪；避障距离只看 XY，z 仅用于显示/桌面摆放。
+    Eigen::Vector3d diff = from_point - obstacle.center;
+    diff.z() = 0.0;
     const double center_distance = diff.norm();
     if (center_distance < 1.0e-9) {
       continue;
@@ -368,10 +374,9 @@ Eigen::Vector3d ApfPlannerNode::computeRepulsiveForce(const Eigen::Vector3d& fro
       continue;
     }
 
-    const double magnitude =
-        repulsive_gain_ *
-        (1.0 / clearance - 1.0 / obstacle_influence_distance_) /
-        (clearance * clearance);
+    const double influence_ratio =
+        (obstacle_influence_distance_ - clearance) / obstacle_influence_distance_;
+    const double magnitude = repulsive_gain_ * influence_ratio * influence_ratio;
     force += magnitude * diff.normalized();
   }
 
@@ -400,6 +405,41 @@ Eigen::Vector3d ApfPlannerNode::clampWorkspace(const Eigen::Vector3d& point) con
     clamped[i] = std::clamp(clamped[i], workspace_min_[i], workspace_max_[i]);
   }
   return clamped;
+}
+
+
+void ApfPlannerNode::publishObstacleMarkers(const rclcpp::Time& stamp) {
+  if (!obstacle_marker_pub_ || obstacles_.empty()) {
+    return;
+  }
+
+  visualization_msgs::msg::MarkerArray marker_array;
+  marker_array.markers.reserve(obstacles_.size());
+
+  for (size_t i = 0; i < obstacles_.size(); ++i) {
+    const auto& obstacle = obstacles_[i];
+    visualization_msgs::msg::Marker marker;
+    marker.header.frame_id = frame_id_;
+    marker.header.stamp = stamp;
+    marker.ns = "apf_static_obstacles";
+    marker.id = static_cast<int>(i);
+    marker.type = visualization_msgs::msg::Marker::CYLINDER;
+    marker.action = visualization_msgs::msg::Marker::ADD;
+    marker.pose.position.x = obstacle.center.x();
+    marker.pose.position.y = obstacle.center.y();
+    marker.pose.position.z = obstacle.center.z();
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = 2.0 * obstacle.radius;
+    marker.scale.y = 2.0 * obstacle.radius;
+    marker.scale.z = 0.08;
+    marker.color.r = 0.45;
+    marker.color.g = 0.10;
+    marker.color.b = 0.75;
+    marker.color.a = 0.45;
+    marker_array.markers.push_back(marker);
+  }
+
+  obstacle_marker_pub_->publish(marker_array);
 }
 
 void ApfPlannerNode::publishLookaheadPath(const std::vector<Eigen::Vector3d>& lookahead_path) {

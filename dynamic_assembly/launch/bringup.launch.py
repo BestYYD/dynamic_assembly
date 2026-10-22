@@ -25,7 +25,7 @@ def generate_launch_description():
                 "main.launch.py"
             ])
         ),
-        launch_arguments={"use_sim_time": use_sim_time}.items(),
+        launch_arguments={'use_sim_time': use_sim_time}.items(),
     )
 
     use_camera = LaunchConfiguration("use_camera")

@@ -62,6 +62,16 @@ ament_target_dependencies(mpc_planner_component ${DEPENDENCIES})
 target_link_libraries(mpc_planner_component osqp::osqp)
 rclcpp_components_register_node(mpc_planner_component PLUGIN "dynamic_assembly::MpcPlannerNode" EXECUTABLE mpc_planner_node)
 
+# Temporary fake ArUco publisher for camera-free pipeline tests
+add_executable(fake_aruco_publisher_node src/fake_aruco_publisher_node.cpp)
+target_include_directories(fake_aruco_publisher_node PUBLIC include)
+ament_target_dependencies(fake_aruco_publisher_node rclcpp geometry_msgs ros2_aruco_interfaces)
+
+# RL Residual Node
+add_library(rl_residual_component SHARED src/rl_residual_node.cpp)
+target_include_directories(rl_residual_component PUBLIC include ${EIGEN3_INCLUDE_DIR})
+ament_target_dependencies(rl_residual_component ${DEPENDENCIES})
+rclcpp_components_register_node(rl_residual_component PLUGIN "dynamic_assembly::RlResidualNode" EXECUTABLE rl_residual_node)
 # Hardware Interface Node
 add_library(hardware_interface_component SHARED src/hardware_interface_node.cpp)
 target_include_directories(hardware_interface_component PUBLIC include ${EIGEN3_INCLUDE_DIR})
@@ -84,7 +94,9 @@ install(TARGETS
   ekf_filter_component
   apf_planner_component
   mpc_planner_component
+  rl_residual_component
   hardware_interface_component
+  fake_aruco_publisher_node
   assembly_system
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -93,5 +105,12 @@ install(TARGETS
 
 install(DIRECTORY include/ DESTINATION include)
 install(DIRECTORY launch config DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY matlab DESTINATION share/${PROJECT_NAME})
+
+install(PROGRAMS
+  scripts/export_apf_bag_to_csv.py
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 ament_package()
+

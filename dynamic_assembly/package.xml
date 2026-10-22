@@ -28,6 +28,9 @@
   <depend>eigen</depend>
   <depend>eigen3_cmake_module</depend>
   <depend>ros2_aruco_interfaces</depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>rosbag2_py</exec_depend>
+  <exec_depend>rosidl_runtime_py</exec_depend>
   <exec_depend>ros2_aruco</exec_depend>
   <exec_depend>usb_cam</exec_depend>
   <depend>osqp_vendor</depend>

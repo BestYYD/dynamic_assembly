@@ -6,6 +6,7 @@
 #include <trajectory_msgs/msg/joint_trajectory.hpp>
 #include <Eigen/Dense>
 #include <chrono>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <cstddef>
@@ -56,6 +57,7 @@ private:
       const std::vector<PlanarPoseReference>& references,
       const std::vector<Eigen::Matrix<double, 6, 6>>& jacobians,
       std::vector<Eigen::Matrix<double, 6, 1>>& optimal_velocities);
+  void writeSolveStats(double total_mpc_ms, bool command_sent);
   std::size_t targetPoseIndexForStep(int step) const;
   void fillJointTrajectoryPoint(
       const Eigen::Matrix<double, 6, 1>& positions,
@@ -114,6 +116,18 @@ private:
   int osqp_max_iterations_ = 400;
   double osqp_eps_abs_ = 1.0e-3;
   double osqp_eps_rel_ = 1.0e-3;
+  std::string stats_csv_path_;
+  std::ofstream stats_csv_;
+  bool stats_header_written_ = false;
+  struct SolveStats {
+    int horizon = 0;
+    int iterations = -1;
+    bool success = false;
+    std::string status;
+    double osqp_setup_ms = 0.0;
+    double osqp_solve_ms = 0.0;
+    double osqp_run_time_ms = 0.0;
+  } last_solve_stats_;
 
   Eigen::Matrix<double, 6, 1> joint_lower_limits_;
   Eigen::Matrix<double, 6, 1> joint_upper_limits_;

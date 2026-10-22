@@ -6,6 +6,7 @@
 #include <nav_msgs/msg/path.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 #include <Eigen/Dense>
 #include <moveit/robot_model_loader/robot_model_loader.hpp>
 #include <moveit/robot_state/robot_state.hpp>
@@ -46,6 +47,7 @@ private:
   Eigen::Vector3d clampVectorNorm(const Eigen::Vector3d& value, double max_norm) const;
   Eigen::Vector3d clampWorkspace(const Eigen::Vector3d& point) const;
   void publishLookaheadPath(const std::vector<Eigen::Vector3d>& lookahead_path);
+  void publishObstacleMarkers(const rclcpp::Time& stamp);
 
   std::vector<Obstacle> loadObstaclesFromParameters() const;
 
@@ -61,6 +63,7 @@ private:
   std::string lookahead_topic_ = "/apf/lookahead_point";
   std::string legacy_path_topic_ = "/strategic_goal_path";
   std::string marker_topic_ = "/strategic_goal_path_marker";
+  std::string obstacle_marker_topic_ = "/apf/static_obstacles_marker";
 
   // APF 参数：目标在 XY 平面运动，target_plane_z_ 决定映射到三维空间后的跟踪高度。
   double period_ms_ = 50.0;
@@ -101,6 +104,7 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr lookahead_pub_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr legacy_path_pub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obstacle_marker_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
 
   // MoveIt 运动学对象，用来由关节角实时计算末端位姿。
