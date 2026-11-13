@@ -28,30 +28,30 @@
 │                         ROS2 / Host Platform                            │
 │                                                                         │
 │  ┌─────────────────┐   ┌─────────────────┐   ┌──────────────────────┐   │
-│  │ ArUco Input     │──▶│ State Estimator │──▶│ APF Local Planner    │   │
+│  │ ArUco Input     │──▶│ State Estimator │──▶│ APF Local Planner  │   │
 │  │ Camera / Fake   │   │ TF2 + KF        │   │ Lookahead / Path     │   │
 │  └─────────────────┘   └─────────────────┘   └──────────┬───────────┘   │
 │                                                         │               │
 │                                                         ▼               │
 │  ┌─────────────────┐   ┌─────────────────┐   ┌──────────────────────┐   │
-│  │ Arm Simulation  │◀──│ Joint Trajectory│◀──│ Kinematic MPC        │   │
+│  │ Arm Simulation  │◀──│ Joint Trajectory│◀──│ Kinematic MPC      │   │
 │  │ Gazebo / AR4    │   │ Controller      │   │ MoveIt + OSQP        │   │
 │  └────────┬────────┘   └─────────────────┘   └──────────────────────┘   │
 │           │                                                             │
-│           └── /joint_states ──▶ APF / MPC / optional RL                 │
+│           └── /joint_states ──▶ APF / MPC / optional RL                │
 │                                                                         │
 │  ┌───────────────────────────────────────────────────────────────────┐  │
 │  │ Optional RL Residual Extension (separate launch)                  │  │
 │  │                                                                   │  │
-│  │ Joint / Target / Path / MPC nominal ──▶ Observation (38 values)   │  │
+│  │ Joint / Target / Path / MPC nominal ──▶ Observation (38 values)  │  │
 │  │                                                 │                 │  │
 │  │                                                 ▼                 │  │
 │  │                                      External policy [planned]    │  │
 │  │                                                 │                 │  │
 │  │                                                 ▼                 │  │
-│  │ MPC nominal ──▶ Residual fusion ◀── Action input (6 values)       │  │
+│  │ MPC nominal ──▶ Residual fusion ◀── Action input (6 values)     │  │
 │  │                        │                                          │  │
-│  │                        └──▶ /rl/corrected_cmd                     │  │
+│  │                        └──▶ /rl/corrected_cmd                    │  │
 │  │                             Controller output: OFF by default     │  │
 │  └───────────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────────┘
